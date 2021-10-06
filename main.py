@@ -48,9 +48,9 @@ st.header("Personality Analysis")
 @st.cache
 def load_data() -> SourceData:
 
-    ASSESSMENT_FPATH = "data/big_5_data - assessments.csv"
-    TRAITS_FPATH = "data/big_5_data - traits.csv"
-    USERS_FPATH = "data/big_5_data - users.csv"
+    ASSESSMENT_FPATH = "assets/big_5_data - assessments.csv"
+    TRAITS_FPATH = "assets/big_5_data - traits.csv"
+    USERS_FPATH = "assets/big_5_data - users.csv"
 
     assessments = pd.read_csv(ASSESSMENT_FPATH, index_col="assessment_id")
     traits = pd.read_csv(TRAITS_FPATH)
