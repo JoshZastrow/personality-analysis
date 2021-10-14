@@ -256,7 +256,7 @@ domains = assessments.domain.drop_duplicates().to_list()
 domain_selection = st.radio("Select Domain:", options=domains)
 
 
-def build_radar_charts(assessments, person_1, person_2, domain):
+def build_radar_charts(assessments, person_1, person_2, domain, style="radar"):
     source_data = assessments.loc[lambda d: d.domain == domain]
 
     # Josh's perspective of Josh
@@ -284,6 +284,7 @@ def build_radar_charts(assessments, person_1, person_2, domain):
     comp_3 = comp_3.groupby(["facet"]).mean()["rank"].reset_index()
     comp_4 = comp_4.groupby(["facet"]).mean()["rank"].reset_index()
 
+    if style == "radar":
     fig1 = go.Figure()
 
     # Perpective of Josh
@@ -466,17 +467,52 @@ with col3:
 with col4:
     st.plotly_chart(fig6, use_container_width=True)
 
-st.markdown(
-    """
-### Avoidant Traits
 
-Avoidants are converned that others see through them, recognize their ineptness and put them down.
-To prevent embarrassment, they keep a low profile.
+def build_comp_table(assessments, person_1, person_2) -> None:
+    source_data = (
+        assessments.loc[lambda d: d.domain != d.facet]
+        .loc[lambda d: d.assessee_name == d.assessor_name]
+        .pivot(
+            index="facet",
+            columns=["assessee_name"],
+            values="rank",
+        )
+        .assign(diff=lambda x: abs(x[person_1] - x[person_2]))
+        .sort_values("diff", ascending=False)
+        .reset_index()
+        # .drop(["diff"], axis=1)
+    )
 
-Highly vulnerable traits (insecurity) lay the foundation for this pattern. While
-avoidants are actually eager to socialize, a low sense of self-efficacy can
-create stress in settings outside their control. The response is to retreat to be
-dependent only on themselves. Alone is where they have regained full control.
+    return source_data
 
-"""
-)
+
+data = assessments.loc[lambda d: d.domain != d.facet].loc[
+    lambda d: d.assessee_name == d.assessor_name
+]
+comp = build_comp_table(assessments, person_1, person_2)
+
+for name, group in assessments.groupby("domain"):
+    source = group.loc[lambda d: d.assessor_name == person_2].loc[
+        :, ["assessee_name", "facet", "rank"]
+    ]
+    # st.table(source)
+
+    bars = (
+        alt.Chart(source)
+        .mark_bar()
+        .encode(
+            y="sum(rank):Q",
+            x=alt.X("assessee_name:O", title="name"),
+            color=alt.Color("assessee_name:N", title="test"),
+            column=alt.Row("facet:N", sort="descending"),
+        )
+        .configure_axisX(labelColor="white", tickColor="white")
+        .configure_header(
+            titleColor="white",
+            titleFontSize=14,
+            labelColor="white",
+            labelFontSize=10,
+        )
+    )
+
+    st.altair_chart(bars)
